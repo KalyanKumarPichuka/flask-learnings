@@ -141,6 +141,7 @@ cython_debug/
 #pycache files
 part-3/__pycache__
 part-4/__pycache__
+part-5/__pycache__
 
 #visual studio code
 .vscode
