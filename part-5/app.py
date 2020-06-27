@@ -1,6 +1,7 @@
 from flask import Flask, request
 from flask_restful import Resource, Api, reqparse
 from flask_jwt import JWT, jwt_required
+from user import UserRegister
 
 from security import authenticate, identity
 
@@ -8,18 +9,17 @@ app = Flask(__name__)
 app.secret_key = "kalyan"
 api = Api(app)
 
-jwt = JWT(app, authenticate, identity) # /auth
+jwt = JWT(app, authenticate, identity)  # /auth
 
 items = []
 
 
 class Item(Resource):
     parser = reqparse.RequestParser()
-    parser.add_argument('price',
-            type =float,
-            required = True,
-            help = "This field cannot be empty!"
-        )
+    parser.add_argument(
+        "price", type=float, required=True, help="This field cannot be empty!"
+    )
+
     @jwt_required()
     def get(self, name):
         # for item in items:
@@ -38,14 +38,14 @@ class Item(Resource):
         #     required = True,
         #     help = "This field cannot be empty!"
         # )
-        #data = Item.parser.parse_args() # parser is a class variable
+        # data = Item.parser.parse_args() # parser is a class variable
         if next(filter(lambda x: x["name"] == name, items), None):
             return (
                 {"message": "An item with name '{}' already exists.".format(name)},
                 400,
             )
-        #data = request.get_json()
-        data = Item.parser.parse_args() # parser is a class variable
+        # data = request.get_json()
+        data = Item.parser.parse_args()  # parser is a class variable
         item = {"name": name, "price": data["price"]}
         items.append(item)
         return item, 201
@@ -53,7 +53,7 @@ class Item(Resource):
     def delete(self, name):
         global items
         items = list(filter(lambda x: x["name"] != name, items))
-        return {'message' : 'Item deleted'}
+        return {"message": "Item deleted"}
 
     def put(self, name):
         # parser = reqparse.RequestParser()
@@ -62,14 +62,15 @@ class Item(Resource):
         #     required = True,
         #     help = "This field cannot be empty!"
         # )
-        data = parser.parse_args() # parser is a class variable
+        data = parser.parse_args()  # parser is a class variable
         item = next(filter(lambda x: x["name"] == name, items), None)
         if item is None:
-            item = {'name':name, 'price': data['price']}
+            item = {"name": name, "price": data["price"]}
             items.append(item)
         else:
             item.update(data)
         return item
+
 
 class ItemList(Resource):
     def get(self):
@@ -78,5 +79,6 @@ class ItemList(Resource):
 
 api.add_resource(Item, "/item/<string:name>")  # http://127.0.0.1:5000/item/some_name
 api.add_resource(ItemList, "/items")  # http://127.0.0.1:5000/items
+api.add_resource(UserRegister, "/register")
 
 app.run(port=5000, debug=True)
