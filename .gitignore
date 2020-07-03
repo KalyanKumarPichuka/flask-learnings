@@ -142,9 +142,11 @@ cython_debug/
 part-3/__pycache__
 part-4/__pycache__
 part-5/__pycache__
+part-6/__pycache__
 
 #data.db
 part-5/data.db
+part-6/data.db
 
 #visual studio code
 .vscode
