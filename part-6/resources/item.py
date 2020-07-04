@@ -3,10 +3,14 @@ from flask_restful import Resource, reqparse
 from flask_jwt import jwt_required
 from models.item import ItemModel
 
+
 class Item(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument(
         "price", type=float, required=True, help="This field cannot be empty!"
+    )
+    parser.add_argument(
+        "store_id", type=int, required=True, help="This field cannot be empty!"
     )
 
     @jwt_required()
@@ -19,10 +23,9 @@ class Item(Resource):
         # return {"item": item}, 200 if item else 404
         item = ItemModel.find_by_name(name)
         if item:
-            #return item
+            # return item
             return item.json()
-        return {'message': 'Item not found'}, 404
-
+        return {"message": "Item not found"}, 404
 
     def post(self, name):
         # data = request.get_json(force=True) #shouldnt be used as doesnt look at conetnt-type
@@ -41,32 +44,40 @@ class Item(Resource):
         #     )
         # data = request.get_json()
         if ItemModel.find_by_name(name):
-            return {'message': "An item with name '{}' already exists.".format(name)}, 400
+            return (
+                {"message": "An item with name '{}' already exists.".format(name)},
+                400,
+            )
 
         data = Item.parser.parse_args()  # parser is a class variable
-        #item = {"name": name, "price": data["price"]}
-        item = ItemModel(name, data['price'])
+        # item = {"name": name, "price": data["price"]}
+        item = ItemModel(name, data["price"], data["store_id"])
         # items.append(item)
         try:
-            item.insert()
+            # item.insert()
+            item.save_to_db()
         except:
-            return {'message': 'An error occurred while inserting the record'}, 500 # Internal server error
-        
+            return (
+                {"message": "An error occurred while inserting the record"},
+                500,
+            )  # Internal server error
 
         return item.json(), 201
-
 
     def delete(self, name):
         # global items
         # items = list(filter(lambda x: x["name"] != name, items))
-        connection = sqlite3.connect('data.db')
-        cursor = connection.cursor()
+        # connection = sqlite3.connect('data.db')
+        # cursor = connection.cursor()
 
-        query = "DELETE FROM items WHERE name=?"
-        cursor.execute(query, (name,))
+        # query = "DELETE FROM items WHERE name=?"
+        # cursor.execute(query, (name,))
 
-        connection.commit()
-        connection.close()
+        # connection.commit()
+        # connection.close()
+        item = ItemModel.find_by_name(name)
+        if item:
+            item.delete_from_db()
 
         return {"message": "Item deleted"}
 
@@ -85,36 +96,42 @@ class Item(Resource):
         # else:
         #     item.update(data)
         item = ItemModel.find_by_name(name)
-        #updated_item = {'name': name, 'price': data['price']}
-        updated_item = ItemModel(name, data['price'])
+        # updated_item = {'name': name, 'price': data['price']}
+        # updated_item = ItemModel(name, data['price'])
 
+        # if item is None:
+        #     try:
+        #         updated_item.insert()
+        #     except:
+        #         return {'message': 'An error occurred while inserting the item'}, 500 # Internal server error
+
+        # else:
+        #     try:
+        #         updated_item.update()
+        #     except:
+        #         return {'message': 'An error occurred while updating the item'}, 500 # Internal server error
         if item is None:
-            try:
-                updated_item.insert()
-            except:
-                return {'message': 'An error occurred while inserting the item'}, 500 # Internal server error
-            
+            item = ItemModel(name, data["price"], data["store_id"])
         else:
-            try:
-                updated_item.update()
-            except:
-                return {'message': 'An error occurred while updating the item'}, 500 # Internal server error
-            
+            item.price = data["price"]
 
-        return updated_item.json()
+        item.save_to_db()
+
+        return item.json()
 
 
 class ItemList(Resource):
     def get(self):
-        connection = sqlite3.connect('data.db')
-        cursor = connection.cursor()
+        # connection = sqlite3.connect('data.db')
+        # cursor = connection.cursor()
 
-        query = "SELECT * FROM items"
-        result = cursor.execute(query)
-        items = []
-        for row in result:
-            items.append({'name':row[0], 'price': row[1]})
+        # query = "SELECT * FROM items"
+        # result = cursor.execute(query)
+        # items = []
+        # for row in result:
+        #     items.append({'name':row[0], 'price': row[1]})
 
-        connection.close()
-        
-        return {"items": items}
+        # connection.close()
+
+        # return {"items": items}
+        return {"items": [item.json() for item in ItemModel.query.all()]}
